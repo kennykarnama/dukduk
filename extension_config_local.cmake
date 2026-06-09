@@ -21,7 +21,7 @@ duckdb_extension_load(excel
 duckdb_extension_load(sshfs
     LOAD_TESTS
     GIT_URL https://github.com/midwork-finds-jobs/duckdb-sshfs
-    GIT_TAG 644366f21a80397d38979e6200fd26a544b98e7e
+    GIT_TAG 5f2e422f964010d11a0bea040ab421c4d7f7fa41
     SUBMODULES extension-ci-tools
     INCLUDE_DIR src/include
 )
