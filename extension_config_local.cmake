@@ -18,6 +18,13 @@ duckdb_extension_load(excel
     INCLUDE_DIR src/excel/include
 )
 
+duckdb_extension_load(mssql
+    LOAD_TESTS
+    GIT_URL https://github.com/hugr-lab/mssql-extension
+    GIT_TAG 310219b6c38f85ee24b5edd3a03589362233f428
+    INCLUDE_DIR src/include
+)
+
 duckdb_extension_load(sshfs
     LOAD_TESTS
     GIT_URL https://github.com/midwork-finds-jobs/duckdb-sshfs
