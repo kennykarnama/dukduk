@@ -59,10 +59,10 @@ COPY --from=duckdb-downloader /src/duckdb-1.4.0/ /src/duckdb/
 
 COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmake
 
-# GCC 11 does not accept duckdb-nanoarrow's implicit unique_ptr upcast here.
+# GCC 11 does not accept duckdb-nanoarrow and ducklake's implicit unique_ptr upcast here.
 # FetchContent populates _deps only during cmake configure, which happens
 # inside the first make invocation. We let it run (it will fail at compile
-# time on the nanoarrow error), patch the file, then finish the build.
+# time on the nanoarrow/ducklake error), patch the files, then finish the build.
 RUN cd duckdb \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
     && { CMAKE_POLICY_VERSION_MINIMUM=3.5 \
@@ -72,6 +72,8 @@ RUN cd duckdb \
            make -j"$(nproc)" bundle-library || true; } \
     && test -f build/release/_deps/nanoarrow_extension_fc-src/src/writer/to_arrow_ipc.cpp \
     && sed -i 's/return local_state;/return unique_ptr<LocalTableFunctionState>(local_state.release());/' build/release/_deps/nanoarrow_extension_fc-src/src/writer/to_arrow_ipc.cpp \
+    && test -f build/release/_deps/ducklake_extension_fc-src/src/storage/ducklake_insert.cpp \
+    && python3 -c 'p="build/release/_deps/ducklake_extension_fc-src/src/storage/ducklake_insert.cpp"; s=open(p).read(); target="result->children.push_back(std::move(plan));\n\n\treturn result;\n}"; repl="result->children.push_back(std::move(plan));\n\n\treturn unique_ptr<LogicalOperator>(result.release());\n}"; assert target in s; open(p,"w").write(s.replace(target, repl))' \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 \
       USE_MERGED_VCPKG_MANIFEST=1 \
       VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
