@@ -8,7 +8,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACTS_DIR="${ROOT_DIR}/artifacts"
 OS_NAME=$(uname -s)
-DUCKDB_VERSION="v1.4.0"
+DUCKDB_VERSION="v2.0.0"
 TARGET="${1:-all}"
 
 echo "Building fincent-api for multiple platforms..."

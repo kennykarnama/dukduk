@@ -10,7 +10,7 @@ FROM registry.suse.com/bci/gcc:14 as duckdb-downloader
 
 WORKDIR /src/
 
-RUN curl -L https://github.com/duckdb/duckdb/archive/refs/tags/v1.4.0.tar.gz | tar -xz
+RUN curl -L https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
 
 FROM registry.suse.com/bci/gcc:14 as arrownanodownloader
 
@@ -50,7 +50,7 @@ RUN git clone https://github.com/Microsoft/vcpkg.git && ./vcpkg/bootstrap-vcpkg.
 
 ENV VCPKG_ROOT=/src/vcpkg
 
-COPY --from=duckdb-downloader /src/duckdb-1.4.0/ /src/duckdb/
+COPY --from=duckdb-downloader /src/duckdb-2.0.0/ /src/duckdb/
 
 COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmake
 

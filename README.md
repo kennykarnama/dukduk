@@ -35,6 +35,32 @@ artifacts/duckdb-static-libs-ubuntu-22.04-amd64.zip
 
 The zip extracts to `duckdblib/*.a`, `duckdblib/extension/*/*.duckdb_extension`, and `build-info.txt`, so the extracted `duckdblib` directory can be passed directly with `-L./duckdblib` and used by runtime `LOAD '../duckdblib/extension/.../*.duckdb_extension'` calls.
 
+## Quack Protocol (Client-Server DuckDB)
+
+With DuckDB v2.0.0 and the bundled `quack` extension, DuckDB can run as a multi-user, client-server service over HTTP without single-writer file locks.
+
+### 1. Server Mode
+Load the extension and start the server:
+```sql
+LOAD '../duckdblib/extension/quack/quack.duckdb_extension';
+CALL quack_serve('quack:0.0.0.0:9494', token = 'my_secret_token', allow_other_hostname = true);
+```
+
+Or configure via environment variables with `appgo/duckdb-tester`:
+```bash
+QUACK_BIND_ADDR="0.0.0.0:9494" QUACK_TOKEN="my_secret_token" QUACK_SERVE_FOREVER="true" ./main
+```
+
+### 2. Client Connection
+From any DuckDB client instance:
+```sql
+CREATE SECRET (TYPE quack, TOKEN 'my_secret_token');
+ATTACH 'quack:host:9494' AS remote;
+
+-- Read & write directly to remote server database
+SELECT * FROM remote.my_table;
+```
+
 ## Native DuckDB build (macOS/Linux)
 
 To avoid linker mismatch (for example Linux `.a` files on macOS), build DuckDB artifacts natively on each runner/host:
