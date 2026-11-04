@@ -46,10 +46,12 @@ RUN make install
 
 WORKDIR /src/
 
-RUN git clone https://github.com/Microsoft/vcpkg.git \
-    && git -C vcpkg checkout 2026.06.24 \
-    && sed -i 's/0cc8434dbdfb2e32dd98277ca37c221c1e720dfc2922d49c749e0c70ec0a5e23bf4e15378814e2f17b1dc65ec6ec93d23df5ec31b2f7ed995a4ae36f4522c24a/ecd69b6734be14c467f7db67dd88c0e57ebfad83ce3ddada131ff3e43ac964523e1083d7c7f3803033a9a76adbc32ad26dd2e3aca69884269000ca64130bde07/g' vcpkg/ports/vcpkg-tool-meson/vcpkg-port-config.cmake 2>/dev/null || true \
-    && ./vcpkg/bootstrap-vcpkg.sh
+RUN rm -rf /src/vcpkg \
+    && git clone https://github.com/Microsoft/vcpkg.git /src/vcpkg \
+    && git -C /src/vcpkg checkout 2026.06.24 \
+    && if [ "$(git -C /src/vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C /src/vcpkg fetch --unshallow || git -C /src/vcpkg fetch --all --tags --prune; fi \
+    && sed -i 's/0cc8434dbdfb2e32dd98277ca37c221c1e720dfc2922d49c749e0c70ec0a5e23bf4e15378814e2f17b1dc65ec6ec93d23df5ec31b2f7ed995a4ae36f4522c24a/ecd69b6734be14c467f7db67dd88c0e57ebfad83ce3ddada131ff3e43ac964523e1083d7c7f3803033a9a76adbc32ad26dd2e3aca69884269000ca64130bde07/g' /src/vcpkg/ports/vcpkg-tool-meson/vcpkg-port-config.cmake 2>/dev/null || true \
+    && /src/vcpkg/bootstrap-vcpkg.sh
 
 ENV VCPKG_ROOT=/src/vcpkg
 
@@ -57,7 +59,10 @@ COPY --from=duckdb-downloader /src/duckdb-2.0.0/ /src/duckdb/
 
 COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmake
 
-RUN cd duckdb && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make release
+RUN cd duckdb \
+    && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
+    && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
+    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make release
 
 FROM registry.suse.com/bci/gcc:14 as appbuilder
 
