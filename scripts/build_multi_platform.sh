@@ -166,7 +166,14 @@ build_macos_arm64() {
       echo "Switching DuckDB checkout from ${CURRENT_DUCKDB_VERSION:-unknown} to ${DUCKDB_VERSION}..."
       git -C "${DUCKDB_DIR}" fetch --depth 1 origin "refs/tags/${DUCKDB_VERSION}:refs/tags/${DUCKDB_VERSION}"
       git -C "${DUCKDB_DIR}" checkout --force "${DUCKDB_VERSION}"
+      rm -rf "${DUCKDB_DIR}/build"
     fi
+  fi
+
+  # Clean legacy CMakeCache if generator changed
+  if [[ -f "${DUCKDB_DIR}/build/release/CMakeCache.txt" ]] && grep -q "CMAKE_GENERATOR:INTERNAL=Unix Makefiles" "${DUCKDB_DIR}/build/release/CMakeCache.txt" 2>/dev/null; then
+    echo "Cleaning legacy Unix Makefiles CMakeCache in build/release..."
+    rm -rf "${DUCKDB_DIR}/build/release"
   fi
 
   if [[ ! -d "${VCPKG_DIR}/.git" ]]; then
@@ -251,6 +258,14 @@ PYEOF
     cp -R "${DUCKDB_DIR}/build/release/extension" "${TMP_DUCKDBLIB}/"
   fi
 
+  # Ensure nanoarrow static library compatibility aliases
+  if [ -f "${TMP_DUCKDBLIB}/libnanoarrow_static.a" ] && [ ! -f "${TMP_DUCKDBLIB}/libnanoarrow.a" ]; then
+    cp "${TMP_DUCKDBLIB}/libnanoarrow_static.a" "${TMP_DUCKDBLIB}/libnanoarrow.a"
+  fi
+  if [ -f "${TMP_DUCKDBLIB}/libnanoarrow_ipc_static.a" ] && [ ! -f "${TMP_DUCKDBLIB}/libnanoarrow_ipc.a" ]; then
+    cp "${TMP_DUCKDBLIB}/libnanoarrow_ipc_static.a" "${TMP_DUCKDBLIB}/libnanoarrow_ipc.a"
+  fi
+
   package_static_libs_zip "macos-arm64" "${TMP_DUCKDBLIB}"
 
   # Build Go application
@@ -258,8 +273,8 @@ PYEOF
   pushd "${ROOT_DIR}/appgo" >/dev/null
   CGO_ENABLED=1 \
   CPPFLAGS="-DDUCKDB_STATIC_BUILD" \
-  CGO_LDFLAGS="-L./.duckdblib_build -lduckdb_bundle -lminizip-ng -lstdc++ -lm -ldl -lexpat -lz -lcompression -lnanoarrow -lnanoarrow_ipc -lflatccrt -framework Security -framework SystemConfiguration" \
-  go build -tags=duckdb_use_static_lib -o "${ARTIFACTS_DIR}/fincent-api-macos-arm64" ./duckdb-tester/main.go
+  CGO_LDFLAGS="-L./.duckdblib_build -lduckdb_bundle -lduckdb_loadable_extensions -lminizip-ng -lstdc++ -lm -ldl -lexpat -lz -lcompression -lnanoarrow -lnanoarrow_ipc -lflatccrt -framework Security -framework SystemConfiguration" \
+  go build -tags=duckdb_use_static_lib -o "${ARTIFACTS_DIR}/fincent-api-macos-arm64" ./duckdb-tester/
   popd >/dev/null
 
   chmod +x "${ARTIFACTS_DIR}/fincent-api-macos-arm64"

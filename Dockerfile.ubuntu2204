@@ -123,7 +123,9 @@ COPY --from=duckdb-builder /src/duckdb/build/release/extension/ /app/duckdblib/e
 
 COPY ./appgo/ .
 
-RUN CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib ./duckdb-tester/main.go
+RUN cp duckdblib/libnanoarrow_static.a duckdblib/libnanoarrow.a 2>/dev/null || true; \
+    cp duckdblib/libnanoarrow_ipc_static.a duckdblib/libnanoarrow_ipc.a 2>/dev/null || true; \
+    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lduckdb_loadable_extensions -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib ./duckdb-tester/
 
 FROM ubuntu:22.04
 
