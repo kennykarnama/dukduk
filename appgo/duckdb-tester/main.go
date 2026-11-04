@@ -10,6 +10,7 @@ import (
 func main() {
 
 	extpath := "../duckdblib/extension/postgres_scanner/postgres_scanner.duckdb_extension"
+	ducklakePath := "../duckdblib/extension/ducklake/ducklake.duckdb_extension"
 	xlsExtPath := "../duckdblib/extension/excel/excel.duckdb_extension"
 	arrowExtPath := "../duckdblib/extension/nanoarrow/nanoarrow.duckdb_extension"
 	httpFsPath := "../duckdblib/extension/httpfs/httpfs.duckdb_extension"
@@ -17,6 +18,7 @@ func main() {
 
 	extensions := []string{
 		extpath,
+		ducklakePath,
 		xlsExtPath,
 		arrowExtPath,
 		httpFsPath,
