@@ -170,10 +170,14 @@ build_macos_arm64() {
   fi
 
   if [[ ! -d "${VCPKG_DIR}/.git" ]]; then
-    git clone --depth 1 --branch 2026.06.24 https://github.com/Microsoft/vcpkg.git "${VCPKG_DIR}"
+    git clone https://github.com/Microsoft/vcpkg.git "${VCPKG_DIR}"
   else
-    git -C "${VCPKG_DIR}" checkout 2026.06.24 2>/dev/null || true
+    if [[ "$(git -C "${VCPKG_DIR}" rev-parse --is-shallow-repository 2>/dev/null || echo false)" == "true" ]]; then
+      echo "Detected shallow vcpkg clone, fetching full history for git read-tree..."
+      git -C "${VCPKG_DIR}" fetch --unshallow || git -C "${VCPKG_DIR}" fetch --all --tags --prune
+    fi
   fi
+  git -C "${VCPKG_DIR}" checkout 2026.06.24 2>/dev/null || true
 
   if [[ -f "${VCPKG_DIR}/ports/vcpkg-tool-meson/vcpkg-port-config.cmake" ]]; then
     sed -i '' 's/0cc8434dbdfb2e32dd98277ca37c221c1e720dfc2922d49c749e0c70ec0a5e23bf4e15378814e2f17b1dc65ec6ec93d23df5ec31b2f7ed995a4ae36f4522c24a/ecd69b6734be14c467f7db67dd88c0e57ebfad83ce3ddada131ff3e43ac964523e1083d7c7f3803033a9a76adbc32ad26dd2e3aca69884269000ca64130bde07/g' "${VCPKG_DIR}/ports/vcpkg-tool-meson/vcpkg-port-config.cmake" 2>/dev/null || true
