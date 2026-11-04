@@ -185,6 +185,34 @@ build_macos_arm64() {
   export VCPKG_ROOT="${VCPKG_DIR}"
   cp "${ROOT_DIR}/extension_config_local.cmake" "${DUCKDB_DIR}/extension/extension_config_local.cmake"
 
+  # Ensure TEnumIterator in Thrift.h has operator== for Xcode 16+ Apple Clang libc++
+  local thrift_header="${DUCKDB_DIR}/third_party/thrift/thrift/Thrift.h"
+  if [[ -f "${thrift_header}" ]] && ! grep -q "operator==" "${thrift_header}"; then
+    python3 - "${thrift_header}" << 'PYEOF'
+import sys
+p = sys.argv[1]
+with open(p, "r") as f:
+    s = f.read()
+target = """  bool operator!=(const TEnumIterator& end) {
+    THRIFT_UNUSED_VARIABLE(end);
+    assert(end.n_ == -1);
+    return (ii_ != n_);
+  }"""
+replacement = """  bool operator!=(const TEnumIterator& end) const {
+    THRIFT_UNUSED_VARIABLE(end);
+    assert(end.n_ == -1);
+    return (ii_ != n_);
+  }
+
+  bool operator==(const TEnumIterator& end) const {
+    return !(*this != end);
+  }"""
+if target in s:
+    with open(p, "w") as f:
+        f.write(s.replace(target, replacement))
+PYEOF
+  fi
+
   pushd "${DUCKDB_DIR}" >/dev/null
   CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration
   CMAKE_POLICY_VERSION_MINIMUM=3.5 \
