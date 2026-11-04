@@ -8,6 +8,7 @@ duckdb_extension_load(httpfs
 duckdb_extension_load(postgres_scanner
     GIT_URL https://github.com/duckdb/duckdb-postgres
     GIT_TAG 2a1871dfe28dcde47c083860fb5ddc2a5c56dc69
+    SUBMODULES database-connector
 )
 
 duckdb_extension_load(ducklake
