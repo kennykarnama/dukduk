@@ -54,7 +54,7 @@ COPY --from=duckdb-downloader /src/duckdb-2.0.0/ /src/duckdb/
 
 COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmake
 
-RUN cd duckdb && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make bundle-library
+RUN cd duckdb && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make release
 
 FROM registry.suse.com/bci/gcc:14 as appbuilder
 

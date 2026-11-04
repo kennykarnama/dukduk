@@ -219,7 +219,25 @@ PYEOF
   USE_MERGED_VCPKG_MANIFEST=1 \
   VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
   EXTENSION_STATIC_BUILD=1 \
-  make -j"$(sysctl -n hw.logicalcpu)" bundle-library
+  make -j"$(sysctl -n hw.logicalcpu)" release
+
+  # Assemble libduckdb_bundle.a from compiled static archives
+  echo "Bundling static libraries into libduckdb_bundle.a..."
+  BUNDLE_TMP="${DUCKDB_DIR}/build/release/bundle_tmp"
+  rm -rf "${BUNDLE_TMP}"
+  mkdir -p "${BUNDLE_TMP}"
+  find "${DUCKDB_DIR}/build/release" -name "*.a" ! -name "libduckdb_bundle.a" -exec cp {} "${BUNDLE_TMP}/" \; 2>/dev/null || true
+  (
+    cd "${BUNDLE_TMP}"
+    for lib in *.a; do
+      [ -f "$lib" ] || continue
+      obj_dir="${lib}.objs"
+      mkdir -p "${obj_dir}"
+      (cd "${obj_dir}" && ar -x "../${lib}" 2>/dev/null || true)
+    done
+    find . -name "*.o" | xargs ar cr "${DUCKDB_DIR}/build/release/libduckdb_bundle.a" 2>/dev/null || true
+  )
+  rm -rf "${BUNDLE_TMP}"
   popd >/dev/null
 
   # Prepare duckdblib for app build

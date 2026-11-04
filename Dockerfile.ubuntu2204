@@ -69,7 +69,7 @@ RUN cd duckdb \
            USE_MERGED_VCPKG_MANIFEST=1 \
            VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
            EXTENSION_STATIC_BUILD=1 \
-           make -j"$(nproc)" bundle-library || true; } \
+           make -j"$(nproc)" release || true; } \
     && test -f build/release/_deps/nanoarrow_extension_fc-src/src/writer/to_arrow_ipc.cpp \
     && sed -i 's/return local_state;/return unique_ptr<LocalTableFunctionState>(local_state.release());/' build/release/_deps/nanoarrow_extension_fc-src/src/writer/to_arrow_ipc.cpp \
     && test -f build/release/_deps/ducklake_extension_fc-src/src/storage/ducklake_insert.cpp \
@@ -78,7 +78,7 @@ RUN cd duckdb \
       USE_MERGED_VCPKG_MANIFEST=1 \
       VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
       EXTENSION_STATIC_BUILD=1 \
-      make -j"$(nproc)" bundle-library
+      make -j"$(nproc)" release
 
 FROM ubuntu:22.04 AS appbuilder
 
