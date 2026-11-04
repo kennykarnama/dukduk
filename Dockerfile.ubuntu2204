@@ -64,27 +64,14 @@ COPY --from=duckdb-downloader /src/duckdb-2.0.0/ /src/duckdb/
 
 COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmake
 
-# GCC 11 does not accept duckdb-nanoarrow and ducklake's implicit unique_ptr upcast here.
-# FetchContent populates _deps only during cmake configure, which happens
-# inside the first make invocation. We let it run (it will fail at compile
-# time on the nanoarrow/ducklake error), patch the files, then finish the build.
 RUN cd duckdb \
     && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
-    && { CMAKE_POLICY_VERSION_MINIMUM=3.5 \
-           USE_MERGED_VCPKG_MANIFEST=1 \
-           VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
-           EXTENSION_STATIC_BUILD=1 \
-           make -j"$(nproc)" release || true; } \
-    && test -f build/release/_deps/nanoarrow_extension_fc-src/src/writer/to_arrow_ipc.cpp \
-    && sed -i 's/return local_state;/return unique_ptr<LocalTableFunctionState>(local_state.release());/' build/release/_deps/nanoarrow_extension_fc-src/src/writer/to_arrow_ipc.cpp \
-    && test -f build/release/_deps/ducklake_extension_fc-src/src/storage/ducklake_insert.cpp \
-    && python3 -c 'p="build/release/_deps/ducklake_extension_fc-src/src/storage/ducklake_insert.cpp"; s=open(p).read(); target="result->children.push_back(std::move(plan));\n\n\treturn result;\n}"; repl="result->children.push_back(std::move(plan));\n\n\treturn unique_ptr<LogicalOperator>(result.release());\n}"; assert target in s; open(p,"w").write(s.replace(target, repl))' \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 \
-      USE_MERGED_VCPKG_MANIFEST=1 \
-      VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
-      EXTENSION_STATIC_BUILD=1 \
-      make -j"$(nproc)" release
+       USE_MERGED_VCPKG_MANIFEST=1 \
+       VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
+       EXTENSION_STATIC_BUILD=1 \
+       make -j"$(nproc)" release
 
 FROM ubuntu:22.04 AS appbuilder
 
@@ -125,7 +112,7 @@ COPY ./appgo/ .
 
 RUN cp duckdblib/libnanoarrow_static.a duckdblib/libnanoarrow.a 2>/dev/null || true; \
     cp duckdblib/libnanoarrow_ipc_static.a duckdblib/libnanoarrow_ipc.a 2>/dev/null || true; \
-    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lduckdb_loadable_extensions -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib ./duckdb-tester/
+    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lduckdb_loadable_extensions -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib -o main ./duckdb-tester/
 
 FROM ubuntu:22.04
 
