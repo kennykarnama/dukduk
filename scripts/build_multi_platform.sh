@@ -188,7 +188,29 @@ build_macos_arm64() {
   # Ensure TEnumIterator in Thrift.h has operator== for Xcode 16+ Apple Clang libc++
   local thrift_header="${DUCKDB_DIR}/third_party/thrift/thrift/Thrift.h"
   if [[ -f "${thrift_header}" ]] && ! grep -q "operator==" "${thrift_header}"; then
-    sed -i '' 's/bool operator!=(const TEnumIterator& end) {/bool operator!=(const TEnumIterator\& end) const {\\n    THRIFT_UNUSED_VARIABLE(end);\\n    assert(end.n_ == -1);\\n    return (ii_ != n_);\\n  }\\n\\n  bool operator==(const TEnumIterator\& end) const {\\n    return !(*this != end);/' "${thrift_header}"
+    python3 - "${thrift_header}" << 'PYEOF'
+import sys
+p = sys.argv[1]
+with open(p, "r") as f:
+    s = f.read()
+target = """  bool operator!=(const TEnumIterator& end) {
+    THRIFT_UNUSED_VARIABLE(end);
+    assert(end.n_ == -1);
+    return (ii_ != n_);
+  }"""
+replacement = """  bool operator!=(const TEnumIterator& end) const {
+    THRIFT_UNUSED_VARIABLE(end);
+    assert(end.n_ == -1);
+    return (ii_ != n_);
+  }
+
+  bool operator==(const TEnumIterator& end) const {
+    return !(*this != end);
+  }"""
+if target in s:
+    with open(p, "w") as f:
+        f.write(s.replace(target, replacement))
+PYEOF
   fi
 
   pushd "${DUCKDB_DIR}" >/dev/null
