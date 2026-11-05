@@ -43,6 +43,7 @@ RUN cd duckdb \
          find /src/duckdb/build/release -name "*.a" ! -name "libduckdb_bundle.a" -exec cp {} "$BUNDLE_TMP/" \; 2>/dev/null || true; \
          cd "$BUNDLE_TMP" && for lib in *.a; do [ -f "$lib" ] || continue; obj_dir="${lib}.objs"; mkdir -p "$obj_dir"; (cd "$obj_dir" && ar -x "../$lib" 2>/dev/null || true); done; \
          find . -name "*.o" | xargs ar cr /duckdblib/libduckdb_bundle.a 2>/dev/null || true; \
+         ranlib /duckdblib/libduckdb_bundle.a 2>/dev/null || true; \
          rm -rf "$BUNDLE_TMP"; \
        )
 
@@ -70,7 +71,7 @@ COPY ./appgo/ .
 
 RUN cp /app/duckdblib/libnanoarrow_static.a /app/duckdblib/libnanoarrow.a 2>/dev/null || true; \
     cp /app/duckdblib/libnanoarrow_ipc_static.a /app/duckdblib/libnanoarrow_ipc.a 2>/dev/null || true; \
-    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -Wl,--start-group -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lduckdb_loadable_extensions -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lcore_functions_extension -lexcel_extension -lminizip-ng -Wl,--end-group -lexpat -lcurl -lssh2 -lz -lssl -lcrypto -lstdc++ -lm -ldl" go build -tags=duckdb_use_static_lib -o main ./duckdb-tester/
+    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -Wl,--start-group -lduckdb_bundle -lduckdb_static -lduckdb_loadable_extensions -lnanoarrow -lnanoarrow_ipc -lflatccrt -lminizip-ng -Wl,--end-group -lexpat -lcurl -lssh2 -lz -lssl -lcrypto -lstdc++ -lm -ldl -lpthread" go build -tags=duckdb_use_static_lib -o main ./duckdb-tester/
 
 FROM registry.suse.com/bci/bci-base:15.7
 
