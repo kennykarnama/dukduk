@@ -1,0 +1,53 @@
+steps:
+  # 1. Build the appbuilder stage (compiles DuckDB v2.0 + all extensions + Go app)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--target'
+      - 'appbuilder'
+      - '--build-arg'
+      - 'TARGETARCH=amd64'
+      - '-t'
+      - 'fincent-api-builder:linux-amd64'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # 2. Extract compiled binary and libraries from the image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p ./artifacts
+        docker create --name extract-linux-amd64 fincent-api-builder:linux-amd64
+        docker cp extract-linux-amd64:/app/main ./artifacts/fincent-api-linux-amd64
+        docker cp extract-linux-amd64:/app/duckdblib ./artifacts/duckdblib
+        docker rm extract-linux-amd64
+        chmod +x ./artifacts/fincent-api-linux-amd64
+
+  # 3. Package duckdblib into zip artifact
+  - name: 'python:3.11-slim'
+    entrypoint: 'python3'
+    args:
+      - '-c'
+      - |
+        import shutil, os
+        print("Packaging duckdblib into duckdb-static-libs-linux-amd64.zip...")
+        shutil.make_archive('artifacts/duckdb-static-libs-linux-amd64', 'zip', 'artifacts/duckdblib')
+        shutil.rmtree('artifacts/duckdblib')
+        print("Packaging complete! Artifacts:")
+        for f in os.listdir('artifacts'):
+            p = os.path.join('artifacts', f)
+            print(f"  • {f} ({os.path.getsize(p) / 1024 / 1024:.2f} MB)")
+
+# 4. Automatically upload artifacts to Google Cloud Storage
+artifacts:
+  objects:
+    location: 'gs://kennyf/dukduk-artifacts/linux-amd64'
+    paths:
+      - 'artifacts/*'
+
+options:
+  machineType: 'E2_HIGHCPU_16'
+timeout: '3600s'

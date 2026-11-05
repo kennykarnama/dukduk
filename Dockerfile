@@ -33,7 +33,7 @@ COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmak
 RUN cd duckdb \
     && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
-    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make -j"$(nproc)" release
+    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 CMAKE_VARS="-DBUILD_UNITTESTS=OFF" make -j"$(nproc)" release
 
 FROM registry.suse.com/bci/gcc:14 AS appbuilder
 

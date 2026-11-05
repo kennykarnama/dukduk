@@ -57,6 +57,7 @@ RUN cd duckdb \
        USE_MERGED_VCPKG_MANIFEST=1 \
        VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
        EXTENSION_STATIC_BUILD=1 \
+       CMAKE_VARS="-DBUILD_UNITTESTS=OFF" \
        make -j"$(nproc)" release
 
 FROM ubuntu:22.04 AS appbuilder
