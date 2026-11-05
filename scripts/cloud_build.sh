@@ -19,11 +19,17 @@ echo "=== Downloading artifacts from GCS ==="
 mkdir -p "${ARTIFACTS_DIR}"
 gcloud storage cp -r "${GCS_BUCKET}/*" "${ARTIFACTS_DIR}/" || true
 
-# Flatten if artifacts was nested under artifacts/artifacts
+# Flatten if artifacts was nested under artifacts/artifacts or artifacts/linux-amd64
 if [ -d "${ARTIFACTS_DIR}/artifacts" ]; then
   mv "${ARTIFACTS_DIR}/artifacts/"* "${ARTIFACTS_DIR}/" 2>/dev/null || true
   rm -rf "${ARTIFACTS_DIR}/artifacts"
 fi
+if [ -d "${ARTIFACTS_DIR}/linux-amd64" ]; then
+  mv "${ARTIFACTS_DIR}/linux-amd64/"* "${ARTIFACTS_DIR}/" 2>/dev/null || true
+  rm -rf "${ARTIFACTS_DIR}/linux-amd64"
+fi
+rm -f "${ARTIFACTS_DIR}"/*.json 2>/dev/null || true
+chmod +x "${ARTIFACTS_DIR}"/fincent-api-* 2>/dev/null || true
 
 echo ""
 echo "=== Downloaded Artifacts in ${ARTIFACTS_DIR} ==="
