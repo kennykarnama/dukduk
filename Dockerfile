@@ -1,4 +1,4 @@
-FROM registry.suse.com/bci/gcc:14 as cmake-downloader
+FROM registry.suse.com/bci/gcc:14 AS cmake-downloader
 
 WORKDIR /src/
 
@@ -6,19 +6,19 @@ RUN curl -L https://github.com/Kitware/CMake/archive/refs/tags/v3.30.9.tar.gz | 
 
 RUN ls
 
-FROM registry.suse.com/bci/gcc:14 as duckdb-downloader
+FROM registry.suse.com/bci/gcc:14 AS duckdb-downloader
 
 WORKDIR /src/
 
 RUN curl -L https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
 
-FROM registry.suse.com/bci/gcc:14 as arrownanodownloader
+FROM registry.suse.com/bci/gcc:14 AS arrownanodownloader
 
 WORKDIR /src/
 
 RUN curl -L https://github.com/apache/arrow-nanoarrow/releases/download/apache-arrow-nanoarrow-0.7.0/apache-arrow-nanoarrow-0.7.0.tar.gz | tar xz
 
-RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel zip unzip kernel-devel \
+RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl zip unzip kernel-devel \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python
 
@@ -31,9 +31,9 @@ RUN ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release
 RUN make
 RUN make install DESTDIR=/cmake-install
 
-FROM registry.suse.com/bci/gcc:14 as duckdb-builder
+FROM registry.suse.com/bci/gcc:14 AS duckdb-builder
 
-RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel zip unzip kernel-devel \
+RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl zip unzip kernel-devel \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python
 
@@ -68,7 +68,7 @@ RUN cd duckdb \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make release
 
-FROM registry.suse.com/bci/gcc:14 as appbuilder
+FROM registry.suse.com/bci/gcc:14 AS appbuilder
 
 ARG TARGETARCH
 
