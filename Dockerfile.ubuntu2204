@@ -60,6 +60,7 @@ RUN cd duckdb \
     && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
     && sed -i 's/return func_ref;/return std::move(func_ref);/g' build/release/_deps/postgres_scanner_extension_fc-src/src/storage/postgres_catalog.cpp 2>/dev/null || true \
+    && sed -i 's/return secret;/return std::move(secret);/g' build/release/_deps/postgres_scanner_extension_fc-src/src/storage/postgres_secret_storage.cpp 2>/dev/null || true \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 \
        USE_MERGED_VCPKG_MANIFEST=1 \
        VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
