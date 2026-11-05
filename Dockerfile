@@ -8,7 +8,8 @@ FROM registry.suse.com/bci/gcc:14 AS duckdb-builder
 
 RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl ninja zip unzip kernel-devel \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python
+    && ln -sf /usr/bin/python3.11 /usr/bin/python \
+    && sed -i 's/#.*error "Unsupported combination of types for <tgmath.h>."/\/* tgmath bypass *\/ /' /usr/include/tgmath.h 2>/dev/null || true
 
 # Install prebuilt modern CMake (takes 2 seconds instead of compiling from source for 25+ minutes)
 RUN ARCH=$(uname -m) \
