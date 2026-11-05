@@ -2,7 +2,7 @@ FROM registry.suse.com/bci/gcc:14 AS duckdb-downloader
 
 WORKDIR /src/
 
-RUN curl -fsSL https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
+RUN curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
 
 FROM registry.suse.com/bci/gcc:14 AS duckdb-builder
 
@@ -13,7 +13,7 @@ RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-d
 
 # Install prebuilt modern CMake (takes 2 seconds instead of compiling from source for 25+ minutes)
 RUN ARCH=$(uname -m) \
-    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-linux-${ARCH}.tar.gz" | tar -xz --strip-components=1 -C /usr/local
+    && curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-linux-${ARCH}.tar.gz" | tar -xz --strip-components=1 -C /usr/local
 
 WORKDIR /src/
 
@@ -58,7 +58,7 @@ RUN set -eux; \
 			amd64|arm64) GO_ARCH="${TARGETARCH}" ;; \
 			*) echo "Unsupported TARGETARCH: ${TARGETARCH}"; exit 1 ;; \
 		esac; \
-		curl -fsSL "https://go.dev/dl/go1.24.5.linux-${GO_ARCH}.tar.gz" -o go.tar.gz; \
+		curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "https://go.dev/dl/go1.24.5.linux-${GO_ARCH}.tar.gz" -o go.tar.gz; \
 		tar -C /usr/local -xzf go.tar.gz; \
 		rm go.tar.gz
 ENV PATH="$PATH:/usr/local/go/bin"
