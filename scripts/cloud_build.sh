@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
-GCS_BUCKET="gs://kennyf/dukduk-artifacts/linux-amd64"
+GCS_BUCKET="gs://kennyf/dukduk-artifacts"
 ARTIFACTS_DIR="${ROOT_DIR}/artifacts"
 
 echo "=== Submitting build to Google Cloud Build (e2-highcpu-32: 32 vCPUs) ==="

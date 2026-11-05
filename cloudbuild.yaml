@@ -1,5 +1,7 @@
 steps:
-  # 1. Build the appbuilder stage (compiles DuckDB v2.0 + all extensions + Go app)
+  # ==============================================================
+  # 1. SUSE Linux amd64 Build (Dockerfile)
+  # ==============================================================
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -8,46 +10,79 @@ steps:
       - '--build-arg'
       - 'TARGETARCH=amd64'
       - '-t'
-      - 'fincent-api-builder:linux-amd64'
+      - 'builder:suse-amd64'
       - '-f'
       - 'Dockerfile'
       - '.'
 
-  # 2. Extract compiled binary and libraries from the image
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         mkdir -p ./artifacts
-        docker create --name extract-linux-amd64 fincent-api-builder:linux-amd64
-        docker cp extract-linux-amd64:/app/main ./artifacts/fincent-api-linux-amd64
-        docker cp extract-linux-amd64:/app/duckdblib ./artifacts/duckdblib
-        docker rm extract-linux-amd64
+        docker create --name extract-suse builder:suse-amd64
+        docker cp extract-suse:/app/main ./artifacts/fincent-api-linux-amd64
+        docker cp extract-suse:/app/duckdblib ./artifacts/duckdblib-suse
+        docker rm extract-suse
         chmod +x ./artifacts/fincent-api-linux-amd64
 
-  # 3. Package duckdblib into zip artifact
+  # ==============================================================
+  # 2. Ubuntu 22.04 amd64 Build (Dockerfile.ubuntu2204)
+  # ==============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--target'
+      - 'appbuilder'
+      - '--build-arg'
+      - 'TARGETARCH=amd64'
+      - '-t'
+      - 'builder:ubuntu-amd64'
+      - '-f'
+      - 'Dockerfile.ubuntu2204'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker create --name extract-ubuntu builder:ubuntu-amd64
+        docker cp extract-ubuntu:/app/main ./artifacts/fincent-api-ubuntu-22.04-amd64
+        docker cp extract-ubuntu:/app/duckdblib ./artifacts/duckdblib-ubuntu
+        docker rm extract-ubuntu
+        chmod +x ./artifacts/fincent-api-ubuntu-22.04-amd64
+
+  # ==============================================================
+  # 3. Zip both library packages and clean up staging directories
+  # ==============================================================
   - name: 'python:3.11-slim'
     entrypoint: 'python3'
     args:
       - '-c'
       - |
         import shutil, os
-        print("Packaging duckdblib into duckdb-static-libs-linux-amd64.zip...")
-        shutil.make_archive('artifacts/duckdb-static-libs-linux-amd64', 'zip', 'artifacts/duckdblib')
-        shutil.rmtree('artifacts/duckdblib')
-        print("Packaging complete! Artifacts:")
-        for f in os.listdir('artifacts'):
+        print("Packaging SUSE static libraries...")
+        shutil.make_archive('artifacts/duckdb-static-libs-linux-amd64', 'zip', 'artifacts/duckdblib-suse')
+        shutil.rmtree('artifacts/duckdblib-suse')
+
+        print("Packaging Ubuntu static libraries...")
+        shutil.make_archive('artifacts/duckdb-static-libs-ubuntu-22.04-amd64', 'zip', 'artifacts/duckdblib-ubuntu')
+        shutil.rmtree('artifacts/duckdblib-ubuntu')
+
+        print("\nAll Generated Artifacts:")
+        for f in sorted(os.listdir('artifacts')):
             p = os.path.join('artifacts', f)
             print(f"  • {f} ({os.path.getsize(p) / 1024 / 1024:.2f} MB)")
 
-# 4. Automatically upload artifacts to Google Cloud Storage
+# Upload all artifacts to GCS
 artifacts:
   objects:
-    location: 'gs://kennyf/dukduk-artifacts/linux-amd64'
+    location: 'gs://kennyf/dukduk-artifacts'
     paths:
       - 'artifacts/*'
 
 options:
   machineType: 'E2_HIGHCPU_32'
-timeout: '3600s'
+timeout: '7200s'
