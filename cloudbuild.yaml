@@ -49,5 +49,5 @@ artifacts:
       - 'artifacts/*'
 
 options:
-  machineType: 'E2_HIGHCPU_16'
+  machineType: 'E2_HIGHCPU_32'
 timeout: '3600s'

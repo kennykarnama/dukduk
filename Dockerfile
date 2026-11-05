@@ -33,13 +33,24 @@ COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmak
 RUN cd duckdb \
     && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
-    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 CMAKE_VARS="-DBUILD_UNITTESTS=OFF" make -j"$(nproc)" release
+    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 CMAKE_VARS="-DBUILD_UNITTESTS=OFF" make -j"$(nproc)" release \
+    && mkdir -p /duckdblib \
+    && find /src/duckdb/build/release -name "*.a" -exec cp {} /duckdblib/ \; \
+    && cp -R /src/duckdb/build/release/extension /duckdblib/ \
+    && ( \
+         BUNDLE_TMP=/tmp/bundle_tmp; \
+         mkdir -p "$BUNDLE_TMP"; \
+         find /src/duckdb/build/release -name "*.a" ! -name "libduckdb_bundle.a" -exec cp {} "$BUNDLE_TMP/" \; 2>/dev/null || true; \
+         cd "$BUNDLE_TMP" && for lib in *.a; do [ -f "$lib" ] || continue; obj_dir="${lib}.objs"; mkdir -p "$obj_dir"; (cd "$obj_dir" && ar -x "../$lib" 2>/dev/null || true); done; \
+         find . -name "*.o" | xargs ar cr /duckdblib/libduckdb_bundle.a 2>/dev/null || true; \
+         rm -rf "$BUNDLE_TMP"; \
+       )
 
 FROM registry.suse.com/bci/gcc:14 AS appbuilder
 
 ARG TARGETARCH
 
-RUN zypper install -y libssh2-devel
+RUN zypper install -y libopenssl-3-devel libssh2-devel curl libcurl-devel libexpat-devel zlib-devel git
 
 RUN set -eux; \
 		case "${TARGETARCH}" in \
@@ -53,21 +64,13 @@ ENV PATH="$PATH:/usr/local/go/bin"
 
 WORKDIR /app/
 
-
-COPY --from=duckdb-builder /src/duckdb/build/release/**/**/*.a /app/duckdblib/
-COPY --from=duckdb-builder /src/duckdb/build/release/**/**/**/**/*.a /app/duckdblib/
-COPY --from=duckdb-builder /src/duckdb/build/release/**/*.a /app/duckdblib/
-COPY --from=duckdb-builder /src/duckdb/build/release/*.a /app/duckdblib/
-COPY --from=duckdb-builder /src/duckdb/build/release/extension/ /app/duckdblib/extension/
-
-
+COPY --from=duckdb-builder /duckdblib/ /app/duckdblib/
 
 COPY ./appgo/ .
 
-
-RUN cp duckdblib/libnanoarrow_static.a duckdblib/libnanoarrow.a 2>/dev/null || true; \
-    cp duckdblib/libnanoarrow_ipc_static.a duckdblib/libnanoarrow_ipc.a 2>/dev/null || true; \
-    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lduckdb_loadable_extensions -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib -o main ./duckdb-tester/
+RUN cp /app/duckdblib/libnanoarrow_static.a /app/duckdblib/libnanoarrow.a 2>/dev/null || true; \
+    cp /app/duckdblib/libnanoarrow_ipc_static.a /app/duckdblib/libnanoarrow_ipc.a 2>/dev/null || true; \
+    CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -Wl,--start-group -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lduckdb_loadable_extensions -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lcore_functions_extension -lexcel_extension -lminizip-ng -Wl,--end-group -lexpat -lcurl -lssh2 -lz -lssl -lcrypto -lstdc++ -lm -ldl" go build -tags=duckdb_use_static_lib -o main ./duckdb-tester/
 
 FROM registry.suse.com/bci/bci-base:15.7
 
