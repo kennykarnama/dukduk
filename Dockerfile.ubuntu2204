@@ -51,6 +51,8 @@ RUN rm -rf /src/vcpkg \
     && /src/vcpkg/bootstrap-vcpkg.sh
 
 ENV VCPKG_ROOT=/src/vcpkg
+ENV CC=gcc-12
+ENV CXX=g++-12
 
 COPY --from=duckdb-downloader /src/duckdb-2.0.0/ /src/duckdb/
 
@@ -67,6 +69,8 @@ RUN cd duckdb \
          make -j"$(nproc)" release || true; } \
     && sed -i 's/return func_ref;/return std::move(func_ref);/g' build/release/_deps/postgres_scanner_extension_fc-src/src/storage/postgres_catalog.cpp 2>/dev/null || true \
     && sed -i 's/return secret;/return std::move(secret);/g' build/release/_deps/postgres_scanner_extension_fc-src/src/storage/postgres_secret_storage.cpp 2>/dev/null || true \
+    && sed -i 's/return result;/return std::move(result);/g' build/release/_deps/quack_extension_fc-src/src/quack_cancel.cpp 2>/dev/null || true \
+    && sed -i 's/return result;/return std::move(result);/g' build/release/_deps/quack_extension_fc-src/src/quack_active_connections.cpp 2>/dev/null || true \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 \
        USE_MERGED_VCPKG_MANIFEST=1 \
        VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
@@ -118,6 +122,8 @@ RUN set -eux; \
     rm go.tar.gz
 
 ENV PATH="$PATH:/usr/local/go/bin"
+ENV CC=gcc-12
+ENV CXX=g++-12
 
 WORKDIR /app/
 
