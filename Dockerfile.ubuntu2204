@@ -19,6 +19,8 @@ RUN apt-get update \
       ca-certificates \
       curl \
       flex \
+      gcc-12 \
+      g++-12 \
       git \
       libssl-dev \
       libssh2-1-dev \
@@ -29,6 +31,10 @@ RUN apt-get update \
       python3 \
       unzip \
       zip \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100 \
+    && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-12 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-12 100 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install prebuilt modern CMake (takes 2 seconds instead of compiling from source)
@@ -53,6 +59,7 @@ COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmak
 RUN cd duckdb \
     && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
+    && sed -i 's/return func_ref;/return std::move(func_ref);/g' build/release/_deps/postgres_scanner_extension_fc-src/src/storage/postgres_catalog.cpp 2>/dev/null || true \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 \
        USE_MERGED_VCPKG_MANIFEST=1 \
        VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake \
@@ -80,13 +87,18 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
-      g++ \
+      gcc-12 \
+      g++-12 \
       git \
       libcurl4-openssl-dev \
       libexpat1-dev \
       libssh2-1-dev \
       libssl-dev \
       zlib1g-dev \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100 \
+    && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-12 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-12 100 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
