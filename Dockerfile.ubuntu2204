@@ -1,15 +1,3 @@
-FROM ubuntu:22.04 AS cmake-downloader
-
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      ca-certificates \
-      curl \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /src/
-
-RUN curl -L https://github.com/Kitware/CMake/archive/refs/tags/v3.30.9.tar.gz | tar -xz
-
 FROM ubuntu:22.04 AS duckdb-downloader
 
 RUN apt-get update \
@@ -20,7 +8,7 @@ RUN apt-get update \
 
 WORKDIR /src/
 
-RUN curl -L https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
+RUN curl -fsSL https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
 
 FROM ubuntu:22.04 AS duckdb-builder
 
@@ -43,15 +31,9 @@ RUN apt-get update \
       zip \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /src/
-
-COPY --from=cmake-downloader /src/CMake-3.30.9 /cmake/
-
-WORKDIR /cmake/
-
-RUN ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release
-RUN make -j"$(nproc)"
-RUN make install
+# Install prebuilt modern CMake (takes 2 seconds instead of compiling from source)
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-linux-${ARCH}.tar.gz" | tar -xz --strip-components=1 -C /usr/local
 
 WORKDIR /src/
 

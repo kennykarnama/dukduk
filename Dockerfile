@@ -1,35 +1,8 @@
-FROM registry.suse.com/bci/gcc:14 AS cmake-downloader
-
-WORKDIR /src/
-
-RUN curl -L https://github.com/Kitware/CMake/archive/refs/tags/v3.30.9.tar.gz | tar -xz
-
-RUN ls
-
 FROM registry.suse.com/bci/gcc:14 AS duckdb-downloader
 
 WORKDIR /src/
 
-RUN curl -L https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
-
-FROM registry.suse.com/bci/gcc:14 AS arrownanodownloader
-
-WORKDIR /src/
-
-RUN curl -L https://github.com/apache/arrow-nanoarrow/releases/download/apache-arrow-nanoarrow-0.7.0/apache-arrow-nanoarrow-0.7.0.tar.gz | tar xz
-
-RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl ninja zip unzip kernel-devel \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python
-
-COPY --from=cmake-downloader /src/CMake-3.30.9 /cmake/
-
-WORKDIR /cmake/
-
-RUN ls
-RUN ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release
-RUN make
-RUN make install DESTDIR=/cmake-install
+RUN curl -fsSL https://github.com/duckdb/duckdb/archive/refs/tags/v2.0.0.tar.gz | tar -xz
 
 FROM registry.suse.com/bci/gcc:14 AS duckdb-builder
 
@@ -37,16 +10,9 @@ RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-d
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python
 
-WORKDIR /src/
-
-COPY --from=cmake-downloader /src/CMake-3.30.9 /cmake/
-
-WORKDIR /cmake/
-
-RUN ls
-RUN ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release
-RUN make
-RUN make install
+# Install prebuilt modern CMake (takes 2 seconds instead of compiling from source for 25+ minutes)
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-linux-${ARCH}.tar.gz" | tar -xz --strip-components=1 -C /usr/local
 
 WORKDIR /src/
 
@@ -66,7 +32,7 @@ COPY ./extension_config_local.cmake duckdb/extension/extension_config_local.cmak
 RUN cd duckdb \
     && if [ -d ../vcpkg/.git ] && [ "$(git -C ../vcpkg rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then git -C ../vcpkg fetch --unshallow || git -C ../vcpkg fetch --all --tags --prune; fi \
     && CMAKE_POLICY_VERSION_MINIMUM=3.5 make extension_configuration \
-    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make release
+    && CMAKE_POLICY_VERSION_MINIMUM=3.5 USE_MERGED_VCPKG_MANIFEST=1 VCPKG_TOOLCHAIN_PATH=../vcpkg/scripts/buildsystems/vcpkg.cmake EXTENSION_STATIC_BUILD=1 make -j"$(nproc)" release
 
 FROM registry.suse.com/bci/gcc:14 AS appbuilder
 
