@@ -18,7 +18,7 @@ WORKDIR /src/
 
 RUN curl -L https://github.com/apache/arrow-nanoarrow/releases/download/apache-arrow-nanoarrow-0.7.0/apache-arrow-nanoarrow-0.7.0.tar.gz | tar xz
 
-RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl zip unzip kernel-devel \
+RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl ninja zip unzip kernel-devel \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python
 
@@ -33,7 +33,7 @@ RUN make install DESTDIR=/cmake-install
 
 FROM registry.suse.com/bci/gcc:14 AS duckdb-builder
 
-RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl zip unzip kernel-devel \
+RUN zypper install -y libopenssl-3-devel libssh2-devel git python311 python311-devel bison flex perl ninja zip unzip kernel-devel \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python
 

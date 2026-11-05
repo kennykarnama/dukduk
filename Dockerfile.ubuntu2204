@@ -35,6 +35,7 @@ RUN apt-get update \
       libssl-dev \
       libssh2-1-dev \
       linux-headers-generic \
+      ninja-build \
       perl \
       pkg-config \
       python3 \
