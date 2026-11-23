@@ -1,9 +1,0 @@
-.gcloudignore
-.git
-.gitignore
-.DS_Store
-.build/
-artifacts/
-duckdblib/
-kennyduck/
-atmrthings/

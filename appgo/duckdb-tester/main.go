@@ -40,6 +40,9 @@ func main() {
 		"httpfs",
 		"sshfs",
 		"quack",
+		"core_functions",
+		"json",
+		"json_schema",
 	}
 
 	db, err := sql.Open("duckdb", ":memory:?allow_unsigned_extensions=true")

@@ -50,3 +50,11 @@ duckdb_extension_load(quack
     GIT_URL https://github.com/duckdb/duckdb-quack
     GIT_TAG 726531a7166ae020944d174d54faa0c9c9bd6b75
 )
+
+duckdb_extension_load(json_schema
+    LOAD_TESTS
+    GIT_URL https://github.com/Query-farm/json_schema
+    GIT_TAG ed6cbd4f15140fb19296c605b384aeef5591e606
+    SUBMODULES extension-ci-tools
+    INCLUDE_DIR src/include
+)
