@@ -60,6 +60,8 @@ jobs:
           path: ./artifacts/duckdb-static-libs-ubuntu-22.04-amd64.zip
 
   build-macos:
+    # Disabled: macOS runners are expensive; build locally via ./scripts/build_multi_platform.sh macos-arm64
+    if: false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +93,7 @@ jobs:
           path: ./artifacts/duckdb-static-libs-macos-arm64.zip
 
   release:
-    needs: [build-linux-suse, build-linux-ubuntu, build-macos]
+    needs: [build-linux-suse, build-linux-ubuntu]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -103,7 +105,5 @@ jobs:
           files: |
             fincent-api-linux-amd64/fincent-api-linux-amd64
             fincent-api-ubuntu-22.04-amd64/fincent-api-ubuntu-22.04-amd64
-            fincent-api-macos-arm64/fincent-api-macos-arm64
             duckdb-static-libs-linux-amd64/duckdb-static-libs-linux-amd64.zip
             duckdb-static-libs-ubuntu-22.04-amd64/duckdb-static-libs-ubuntu-22.04-amd64.zip
-            duckdb-static-libs-macos-arm64/duckdb-static-libs-macos-arm64.zip

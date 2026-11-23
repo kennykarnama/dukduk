@@ -49,6 +49,7 @@ WORKDIR /src/
 RUN git clone https://github.com/Microsoft/vcpkg.git && ./vcpkg/bootstrap-vcpkg.sh
 
 ENV VCPKG_ROOT=/src/vcpkg
+ENV VCPKG_OVERLAY_PORTS=/src/vcpkg/ports/json-schema-validator
 
 COPY --from=duckdb-downloader /src/duckdb-1.4.0/ /src/duckdb/
 
@@ -86,7 +87,7 @@ COPY --from=duckdb-builder /src/duckdb/build/release/extension/ /app/duckdblib/e
 COPY ./appgo/ .
 
 
-RUN CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lmssql_extension -lsshfs_extension -lhttpfs_extension -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib ./duckdb-tester/main.go
+RUN CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-L./duckdblib -lnanoarrow_extension -lnanoarrow -lnanoarrow_ipc -lflatccrt -lduckdb_fastpforlib -lduckdb_fmt -lduckdb_fsst -lduckdb_hyperloglog -lduckdb_mbedtls -lduckdb_miniz -lduckdb_pg_query -lduckdb_re2 -lduckdb_skiplistlib -lduckdb_utf8proc -lduckdb_yyjson -limdb -lduckdb_static -lmssql_extension -lsshfs_extension -lhttpfs_extension -ljson_extension -ljson_schema_extension -lnlohmann_json_schema_validator -lduckdb_yyjson -lduckdb_zstd -ljemalloc_extension -lparquet_extension -lstdc++ -lm -ldl -lminizip-ng -lcore_functions_extension -lexcel_extension -lexpat -lcurl -lssh2 -lz -lssl -lcrypto" go build -tags=duckdb_use_static_lib ./duckdb-tester/main.go
 
 FROM registry.suse.com/bci/bci-base:15.7
 

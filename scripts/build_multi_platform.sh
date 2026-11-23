@@ -183,6 +183,7 @@ build_macos_arm64() {
   "${VCPKG_DIR}/bootstrap-vcpkg.sh"
 
   export VCPKG_ROOT="${VCPKG_DIR}"
+  export VCPKG_OVERLAY_PORTS="${VCPKG_DIR}/ports/json-schema-validator"
   cp "${ROOT_DIR}/extension_config_local.cmake" "${DUCKDB_DIR}/extension/extension_config_local.cmake"
 
   pushd "${DUCKDB_DIR}" >/dev/null
@@ -209,7 +210,7 @@ build_macos_arm64() {
   pushd "${ROOT_DIR}/appgo" >/dev/null
   CGO_ENABLED=1 \
   CPPFLAGS="-DDUCKDB_STATIC_BUILD" \
-  CGO_LDFLAGS="-L./.duckdblib_build -lduckdb_bundle -lminizip-ng -lstdc++ -lm -ldl -lexpat -lz -lcompression -lnanoarrow -lnanoarrow_ipc -lflatccrt -framework Security -framework SystemConfiguration" \
+  CGO_LDFLAGS="-L./.duckdblib_build -lduckdb_bundle -lnlohmann_json_schema_validator -lminizip-ng -lstdc++ -lm -ldl -lexpat -lz -lcompression -lnanoarrow -lnanoarrow_ipc -lflatccrt -framework Security -framework SystemConfiguration" \
   go build -tags=duckdb_use_static_lib -o "${ARTIFACTS_DIR}/fincent-api-macos-arm64" ./duckdb-tester/main.go
   popd >/dev/null
 
