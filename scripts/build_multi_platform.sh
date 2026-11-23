@@ -183,6 +183,7 @@ build_macos_arm64() {
   "${VCPKG_DIR}/bootstrap-vcpkg.sh"
 
   export VCPKG_ROOT="${VCPKG_DIR}"
+  export VCPKG_OVERLAY_PORTS="${VCPKG_DIR}/ports/json-schema-validator"
   cp "${ROOT_DIR}/extension_config_local.cmake" "${DUCKDB_DIR}/extension/extension_config_local.cmake"
 
   pushd "${DUCKDB_DIR}" >/dev/null

@@ -49,6 +49,7 @@ WORKDIR /src/
 RUN git clone https://github.com/Microsoft/vcpkg.git && ./vcpkg/bootstrap-vcpkg.sh
 
 ENV VCPKG_ROOT=/src/vcpkg
+ENV VCPKG_OVERLAY_PORTS=/src/vcpkg/ports/json-schema-validator
 
 COPY --from=duckdb-downloader /src/duckdb-1.4.0/ /src/duckdb/
 
