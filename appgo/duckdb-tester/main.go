@@ -14,6 +14,9 @@ func main() {
 	arrowExtPath := "../duckdblib/extension/nanoarrow/nanoarrow.duckdb_extension"
 	httpFsPath := "../duckdblib/extension/httpfs/httpfs.duckdb_extension"
 	sshFsPath := "../duckdblib/extension/sshfs/sshfs.duckdb_extension"
+	coreFunctionsPath := "../duckdblib/extension/core_functions/core_functions.duckdb_extension"
+	jsonExtPath := "../duckdblib/extension/json/json.duckdb_extension"
+	jsonSchemaExtPath := "../duckdblib/extension/json_schema/json_schema.duckdb_extension"
 
 	extensions := []string{
 		extpath,
@@ -21,6 +24,9 @@ func main() {
 		arrowExtPath,
 		httpFsPath,
 		sshFsPath,
+		coreFunctionsPath,
+		jsonExtPath,
+		jsonSchemaExtPath,
 	}
 
 	// duck, err := db.InitDuck(":memory:?allow_unsigned_extensions=true",

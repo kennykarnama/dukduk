@@ -41,3 +41,13 @@ duckdb_extension_load(nanoarrow
     GIT_TAG 0201908c2163218aba0b8eb95fca753ab3ee3868
     INCLUDE_DIR src/include
 )
+
+duckdb_extension_load(json)
+
+duckdb_extension_load(json_schema
+    LOAD_TESTS
+    GIT_URL https://github.com/Query-farm/json_schema
+    GIT_TAG 69664ce2fb234a071c4e01690584d2c402e96705
+    SUBMODULES extension-ci-tools
+    INCLUDE_DIR src/include
+)
